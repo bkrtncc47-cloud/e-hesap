@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Hesap — Ücretsiz E-Ticaret Kâr Hesaplayıcı</title>
+  <meta name="description" content="Trendyol, Hepsiburada, Amazon ve daha fazlasında ürünlerinizin gerçek kâr marjını anında hesaplayın. Tamamen ücretsiz.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header" id="header">
+    <div class="container">
+      <div class="header-inner">
+        <a href="/" class="logo">
+          <span class="logo-icon">📊</span>
+          <span class="logo-text">E-<span class="logo-accent">Hesap</span></span>
+        </a>
+        <nav class="nav">
+          <a href="#hesapla" class="nav-link">Hesapla</a>
+          <a href="#karsilastir" class="nav-link">Karşılaştır</a>
+          <a href="#platforms" class="nav-link">Platformlar</a>
+          <a href="#" class="nav-link" id="navDashboard" style="display:none;">Dashboard</a>
+        </nav>
+        <div class="header-actions">
+          <div id="authButtons">
+            <button class="btn-ghost" onclick="showAuthModal('login')">Giriş Yap</button>
+            <button class="btn-accent-sm" onclick="showAuthModal('register')">Ücretsiz Kaydol</button>
+          </div>
+          <div id="userMenu" style="display:none;">
+            <div class="user-badge" id="userBadge"></div>
+            <button class="btn-ghost" onclick="logout()">Çıkış</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Auth Modal -->
+  <div class="modal-overlay" id="authModal" style="display:none;">
+    <div class="modal">
+      <button class="modal-close" onclick="closeAuthModal()">✕</button>
+      <div id="authModalContent"></div>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <p class="hero-tag">Tamamen Ücretsiz</p>
+        <h1 class="hero-title">E-Ticaret'te Gerçek <span class="accent">Kârını</span> Hesapla</h1>
+        <p class="hero-desc">Trendyol, Hepsiburada, Amazon TR ve daha fazlasında komisyon, kargo ve tüm masraflar dahil net kâr marjını anında gör.</p>
+        <a href="#hesapla" class="btn-hero">Hemen Hesapla →</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">6</span><span class="stat-lbl">Platform</span></div>
+        <div class="stat"><span class="stat-num">13</span><span class="stat-lbl">Kategori</span></div>
+        <div class="stat"><span class="stat-num">%100</span><span class="stat-lbl">Ücretsiz</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard (hidden, shown after login) -->
+  <section id="proDashboard" class="section" style="display:none;">
+    <div class="container">
+      <div class="section-head">
+        <h2>📋 Dashboard</h2>
+        <p>Hesaplama geçmişiniz ve istatistikleriniz</p>
+      </div>
+      <div class="dash-stats" id="dashboardStats"></div>
+      <div class="dash-tabs">
+        <button class="tab active" onclick="switchTab('history')">Hesaplama Geçmişi</button>
+        <button class="tab" onclick="switchTab('bulk')">Toplu Analiz</button>
+      </div>
+      <div class="tab-panel" id="tabHistory">
+        <div class="card">
+          <div id="historyList"><p class="empty-msg">Henüz hesaplama geçmişi yok.</p></div>
+        </div>
+      </div>
+      <div class="tab-panel" id="tabBulk" style="display:none;">
+        <div class="card">
+          <h3>📊 Excel ile Toplu Analiz</h3>
+          <p class="text-muted">Ürün listenizi yükleyin, tüm kâr/zarar analizini görün.</p>
+          <div class="upload-zone" id="fileUploadZone">
+            <p>📁 Dosyanızı sürükleyin veya tıklayın</p>
+            <span class="text-muted">.xlsx, .xls, .csv — Maks. 5MB</span>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;">
+            <span id="uploadFilename"></span>
+          </div>
+          <div class="row gap" style="margin-top:16px;">
+            <div class="form-group flex-1">
+              <label>Platform</label>
+              <select id="bulkPlatform"></select>
+            </div>
+            <div class="form-group flex-1">
+              <label>Varsayılan Kategori</label>
+              <select id="bulkCategory"></select>
+            </div>
+          </div>
+          <div class="row gap" style="justify-content:flex-end;margin-top:12px;">
+            <a href="/api/bulk/template" class="btn-outline" download>📥 Şablon İndir</a>
+            <button class="btn-primary" id="bulkAnalyzeBtn" onclick="handleBulkUpload()" disabled>Analiz Et</button>
+          </div>
+          <div id="bulkResults" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calculator -->
+  <section id="hesapla" class="section bg-alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>💰 Kâr Hesaplayıcı</h2>
+        <p>Ürün bilgilerini gir, hangi platformda ne kadar kazanacağını gör</p>
+      </div>
+      <div class="calc-grid">
+        <div class="card">
+          <h3>📝 Ürün Bilgileri</h3>
+          <div class="form-group">
+            <label for="platformSelect">Platform</label>
+            <select id="platformSelect"><option value="">Platform seçin...</option></select>
+          </div>
+          <div class="form-group">
+            <label for="categorySelect">Kategori</label>
+            <select id="categorySelect" disabled><option value="">Önce platform seçin...</option></select>
+          </div>
+          <div class="row gap">
+            <div class="form-group flex-1">
+              <label for="costPrice">Maliyet Fiyatı (₺)</label>
+              <input type="number" id="costPrice" placeholder="0.00" min="0" step="0.01">
+            </div>
+            <div class="form-group flex-1">
+              <label for="sellingPrice">Satış Fiyatı (₺)</label>
+              <input type="number" id="sellingPrice" placeholder="0.00" min="0" step="0.01">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="quantity">Aylık Satış Adedi</label>
+            <input type="number" id="quantity" placeholder="1" min="1" value="1">
+          </div>
+          <button id="calculateBtn" class="btn-primary full" disabled>⚡ Hesapla</button>
+        </div>
+        <div class="card" id="resultsPanel" style="display:none;">
+          <h3>📊 Sonuçlar</h3>
+          <div id="resultPlatformHeader"></div>
+          <div id="profitDisplay"></div>
+          <div class="breakdown">
+            <h4>Maliyet Dağılımı</h4>
+            <div id="breakdownList"></div>
+          </div>
+          <div id="recommendationsSection"></div>
+          <div id="visualBarSection"></div>
+          <button class="btn-save" id="saveCalcBtn" onclick="saveCalculation()" style="display:none;">💾 Hesaplamayı Kaydet</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section id="karsilastir" class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2>⚔️ Platform Karşılaştırması</h2>
+        <p>Aynı ürünü farklı platformlarda satarsan ne kadar kazanırsın?</p>
+      </div>
+      <div class="card" style="margin-bottom:32px;">
+        <div class="compare-form-grid">
+          <div class="form-group">
+            <label for="compareCat">Kategori</label>
+            <select id="compareCat">
+              <option value="">Kategori seçin...</option>
+              <option value="electronics">Elektronik</option>
+              <option value="fashion">Moda & Giyim</option>
+              <option value="shoes">Ayakkabı</option>
+              <option value="cosmetics">Kozmetik</option>
+              <option value="home">Ev & Yaşam</option>
+              <option value="sports">Spor</option>
+              <option value="baby">Anne & Bebek</option>
+              <option value="food">Gıda</option>
+              <option value="books">Kitap</option>
+              <option value="auto">Otomotiv</option>
+              <option value="pet">Pet Shop</option>
+              <option value="jewelry">Takı</option>
+              <option value="toys">Oyuncak</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="compareCost">Maliyet (₺)</label>
+            <input type="number" id="compareCost" placeholder="0.00" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label for="comparePrice">Satış Fiyatı (₺)</label>
+            <input type="number" id="comparePrice" placeholder="0.00" min="0" step="0.01">
+          </div>
+          <div class="form-group" style="align-self:end;">
+            <button id="compareBtn" class="btn-primary">⚔️ Karşılaştır</button>
+          </div>
+        </div>
+      </div>
+      <div id="compareResults" class="compare-grid" style="display:none;"></div>
+    </div>
+  </section>
+
+  <!-- Platforms -->
+  <section id="platforms" class="section bg-alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>🏪 Desteklenen Platformlar</h2>
+        <p>Türkiye'nin en popüler e-ticaret platformları</p>
+      </div>
+      <div class="platforms-grid" id="platformsGrid"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand"><span>📊</span> E-<span class="logo-accent">Hesap</span></div>
+        <p class="text-muted">© 2026 E-Hesap — Tamamen ücretsiz e-ticaret kâr hesaplama aracı</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/auth.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
